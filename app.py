@@ -181,7 +181,7 @@ with gr.Blocks() as app:
         gr.Markdown(BANNER_TEXT, container=True)
     with gr.Row():
         with gr.Column():
-            text = gr.Textarea(label='Input Text', info="Unlimited text length for both Generate and Stream", lines=5, placeholder="Enter your text here...")
+            text = gr.TextArea(label='Input Text', info="Unlimited text length for both Generate and Stream", lines=5, placeholder="Enter your text here...")
             with gr.Row():
                 voice = gr.Dropdown(list(CHOICES.items()), value='af_heart', label='Voice', info='Quality and availability vary by language')
                 use_gpu = gr.Dropdown(
