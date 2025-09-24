@@ -27,6 +27,10 @@ def generate_first(text, voice='af_heart', speed=1, use_gpu=CUDA_AVAILABLE):
     pipeline = pipelines[voice[0]]
     pack = pipeline.load_voice(voice)
     use_gpu = use_gpu and CUDA_AVAILABLE
+    
+    audio_chunks = []
+    all_ps = []
+    
     for _, ps, _ in pipeline(text, voice, speed):
         ref_s = pack[len(ps)-1]
         try:
@@ -41,7 +45,15 @@ def generate_first(text, voice='af_heart', speed=1, use_gpu=CUDA_AVAILABLE):
                 audio = models[False](ps, ref_s, speed)
             else:
                 raise gr.Error(e)
-        return (24000, audio.numpy()), ps
+        
+        audio_chunks.append(audio.numpy())
+        all_ps.append(ps)
+    
+    if audio_chunks:
+        # Concatenate all audio chunks
+        import numpy as np
+        full_audio = np.concatenate(audio_chunks)
+        return (24000, full_audio), ' '.join(all_ps)
     return None, ''
 
 # Arena API
@@ -50,9 +62,10 @@ def predict(text, voice='af_heart', speed=1):
 
 def tokenize_first(text, voice='af_heart'):
     pipeline = pipelines[voice[0]]
+    all_ps = []
     for _, ps, _ in pipeline(text, voice):
-        return ps
-    return ''
+        all_ps.append(ps)
+    return ' '.join(all_ps) if all_ps else ''
 
 def generate_all(text, voice='af_heart', speed=1, use_gpu=CUDA_AVAILABLE):
     text = text if CHAR_LIMIT is None else text.strip()[:CHAR_LIMIT]
@@ -168,7 +181,7 @@ with gr.Blocks() as app:
         gr.Markdown(BANNER_TEXT, container=True)
     with gr.Row():
         with gr.Column():
-            text = gr.Textbox(label='Input Text', info="Unlimited text length for both Generate and Stream")
+            text = gr.Textarea(label='Input Text', info="Unlimited text length for both Generate and Stream", lines=5, placeholder="Enter your text here...")
             with gr.Row():
                 voice = gr.Dropdown(list(CHOICES.items()), value='af_heart', label='Voice', info='Quality and availability vary by language')
                 use_gpu = gr.Dropdown(
