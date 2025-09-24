@@ -12,7 +12,7 @@ if not IS_DUPLICATE:
     import misaki
     print('DEBUG', kokoro.__version__, CUDA_AVAILABLE, misaki.__version__)
 
-CHAR_LIMIT = None if IS_DUPLICATE else 5000
+CHAR_LIMIT = None
 models = {gpu: KModel().to('cuda' if gpu else 'cpu').eval() for gpu in [False] + ([True] if CUDA_AVAILABLE else [])}
 pipelines = {lang_code: KPipeline(lang_code=lang_code, model=False) for lang_code in 'ab'}
 pipelines['a'].g2p.lexicon.golds['kokoro'] = 'kˈOkəɹO'
@@ -145,11 +145,7 @@ with gr.Blocks() as generate_tab:
         gr.Markdown(TOKEN_NOTE)
         predict_btn = gr.Button('Predict', variant='secondary', visible=False)
 
-STREAM_NOTE = ['⚠️ There is an unknown Gradio bug that might yield no audio the first time you click `Stream`.']
-if CHAR_LIMIT is not None:
-    STREAM_NOTE.append(f'✂️ Each stream is capped at {CHAR_LIMIT} characters.')
-    STREAM_NOTE.append('🚀 Want more characters? You can [use Kokoro directly](https://huggingface.co/hexgrad/Kokoro-82M#usage) or duplicate this space:')
-STREAM_NOTE = '\n\n'.join(STREAM_NOTE)
+STREAM_NOTE = '⚠️ There is an unknown Gradio bug that might yield no audio the first time you click `Stream`.'
 
 with gr.Blocks() as stream_tab:
     out_stream = gr.Audio(label='Output Audio Stream', interactive=False, streaming=True, autoplay=True)
@@ -172,7 +168,7 @@ with gr.Blocks() as app:
         gr.Markdown(BANNER_TEXT, container=True)
     with gr.Row():
         with gr.Column():
-            text = gr.Textbox(label='Input Text', info=f"Up to ~500 characters per Generate, or {'∞' if CHAR_LIMIT is None else CHAR_LIMIT} characters per Stream")
+            text = gr.Textbox(label='Input Text', info="Unlimited text length for both Generate and Stream")
             with gr.Row():
                 voice = gr.Dropdown(list(CHOICES.items()), value='af_heart', label='Voice', info='Quality and availability vary by language')
                 use_gpu = gr.Dropdown(
